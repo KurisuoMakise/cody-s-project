@@ -9,15 +9,40 @@ library(kableExtra)
 library(intervals)
 library(lubridate)
 library(zoo)
+
 library(xts)
 library(dygraphs)
 
 
+#
+#
+#
 
 
 getwd()
 setwd("D:/NCTU_NOT_NYCU/Personal_Project/work")
 staticEB2 <- as.data.frame(read_excel("static_EB2.xlsx"))
+##################################實地勘察數據處理
+table(staticEB2$category)
+#sum(table(table(staticEB2$category))) 找出有幾種不同資料
+category <- as.data.frame(cbind(c("assistant_room","classroom","department_office","lab","library","lounge","meeting_room","office"),rbind(0,0,0,0,0,0,0,0)))
+colnames(category) <- c("category","numbers")
+list <- c("assistant_room","classroom","department_office","lab","library","lounge","meeting_room","office")
+
+for(i in 1:length(staticEB2$category)){
+  if(is.na(staticEB2$category[i]) == FALSE){
+    for(j in 1:length(list)){
+      if(staticEB2$category[i] == list[j]){
+        category$numbers[j] = as.numeric(category$numbers[j]) + 1
+      }
+    }
+  }
+}
+
+plotting <- ggplot(category,aes(x = category,y = numbers)) +
+  geom_bar(stat = "identity")
+plotting
+##################################################
 EBday <- readRDS("EB_day_20180101_20210228_aug.rds")
 EBD <- data.frame(
   Time = EBday$datetime,
@@ -32,6 +57,7 @@ xts_data_daily <- read_rds("money.rds")
 #先資料後時間
 
 EBts <- xts(EBD$Usage,EBD$Time)
+class(EBts)
 ############################################
 
 #列表警示函數
@@ -97,8 +123,8 @@ body <- dashboardBody(
     plotOutput("graph"),
     hr(),
     fluidRow(
-      column(6,plotOutput("for1")),
-      column(6,plotOutput("for2"))
+      column(6,plotOutput("page1")),
+      column(6,plotOutput("page2"))
     )
   ),
   conditionalPanel(
@@ -194,12 +220,12 @@ server <- function(input,output){
 
   ##可根據顯著自相關性的期數，高於虛線多少，在建置ARIMA(自相關性整合移動平均)模型，
   ##將需要相對應數量的MA係數
-  output$for1 <- renderPlot({
-    acf(EBts,main = "MA參數估計")
-  })
-  output$for2 <- renderPlot({
-    pacf(EBts,main = "AR參數估計")
-  })
+  #output$for1 <- renderPlot({
+  #  acf(EBts,main = "MA參數估計")
+  #})
+  #output$for2 <- renderPlot({
+  #  pacf(EBts,main = "AR參數估計")
+  #})
   
   
   ################
@@ -212,20 +238,15 @@ server <- function(input,output){
   })
   
   
-  ###################
+  #######################
   
 }
 
-#Box.test(EBts)
+
 
 
 
 shinyApp(ui,server)
-
-
-mean(staticEB2$class_time)
-
-
 
 
 #**from general to specific
@@ -233,7 +254,6 @@ mean(staticEB2$class_time)
 #**[review] reference
 #gap(vital)(lack something)(compare)
 #goal (new different)
-
 
 #method
 #result
