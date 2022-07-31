@@ -22,27 +22,7 @@ library(dygraphs)
 getwd()
 setwd("D:/NCTU_NOT_NYCU/Personal_Project/work")
 staticEB2 <- as.data.frame(read_excel("static_EB2.xlsx"))
-##################################實地勘察數據處理
-table(staticEB2$category)
-#sum(table(table(staticEB2$category))) 找出有幾種不同資料
-category <- as.data.frame(cbind(c("assistant_room","classroom","department_office","lab","library","lounge","meeting_room","office"),rbind(0,0,0,0,0,0,0,0)))
-colnames(category) <- c("category","numbers")
-list <- c("assistant_room","classroom","department_office","lab","library","lounge","meeting_room","office")
 
-for(i in 1:length(staticEB2$category)){
-  if(is.na(staticEB2$category[i]) == FALSE){
-    for(j in 1:length(list)){
-      if(staticEB2$category[i] == list[j]){
-        category$numbers[j] = as.numeric(category$numbers[j]) + 1
-      }
-    }
-  }
-}
-
-plotting <- ggplot(category,aes(x = category,y = numbers)) +
-  geom_bar(stat = "identity")
-plotting
-##################################################
 EBday <- readRDS("EB_day_20180101_20210228_aug.rds")
 EBD <- data.frame(
   Time = EBday$datetime,
@@ -52,13 +32,6 @@ EBD <- data.frame(
 xts_data_daily <- read_rds("money.rds")
 #########################################
 
-
-#繪製自相關函數圖需要時間序列資料型態#######
-#先資料後時間
-
-EBts <- xts(EBD$Usage,EBD$Time)
-class(EBts)
-############################################
 
 #列表警示函數
 colcal <- function(a){
@@ -120,17 +93,17 @@ body <- dashboardBody(
     #HTML的<p></p>意思
     h1(id = "1","電表數據",align = "center"),
     #status->外框顏色
-    plotOutput("graph"),
+    plotOutput("graph")
+  ),
+  conditionalPanel(
+    condition = "input.select == 'peak_scatter'",
+    h1(id = "2","峰值分布",align = "center"),
+    plotOutput("peak"),
     hr(),
     fluidRow(
       column(6,plotOutput("page1")),
       column(6,plotOutput("page2"))
     )
-  ),
-  conditionalPanel(
-    condition = "input.select == 'peak_scatter'",
-    h1(id = "2","峰值分布",align = "center"),
-    plotOutput("peak")
   ),
   conditionalPanel(
     condition = "input.select == 'record'",
@@ -141,23 +114,7 @@ body <- dashboardBody(
     condition = "input.select == 'BILL'",
     h1(id = "4","電費支出",align = "center"),
     dygraphOutput("expanse")
-  )#,
-#  conditionalPanel(
-#    condition = "input.select == 'self'",
-#    h1(id = "4","自相關函數需求參數",align = "center"),
-#    fluidRow(
-#      column(6,plotOutput('for1')),
-#      column(6,plotOutput('for2'))
-#    )
-#  ),
-#  conditionalPanel(
-#    condition = "input.select == 'test'",
-#    h1(id = "5","測試版面配置",align = "center"),
-#    fluidRow(
-#             column(6,plotOutput('plot1')),
-#             column(6,plotOutput('plot2'))
-#    )
-#  )
+  )
 )
 
 board <- dashboardPage(dashboardHeader(title = "電表數據展示儀表板"),sidebar,body)
@@ -239,6 +196,28 @@ server <- function(input,output){
   
   
   #######################
+  ##################################實地勘察數據處理
+  ##table(staticEB2$category)
+  #sum(table(table(staticEB2$category))) 找出有幾種不同資料
+  category <- as.data.frame(cbind(c("assistant_room","classroom","department_office","lab","library","lounge","meeting_room","office"),rbind(0,0,0,0,0,0,0,0)))
+  colnames(category) <- c("category","numbers")
+  list <- c("assistant_room","classroom","department_office","lab","library","lounge","meeting_room","office")
+  
+  for(i in 1:length(staticEB2$category)){
+    if(is.na(staticEB2$category[i]) == FALSE){
+      for(j in 1:length(list)){
+        if(staticEB2$category[i] == list[j]){
+          category$numbers[j] = as.numeric(category$numbers[j]) + 1
+        }
+      }
+    }
+  }
+  output$page1 <- renderPlot({
+    ggplot(category,aes(x = category,y = numbers,fill = category)) +
+    geom_bar(stat = "identity") + 
+      geom_text(aes(label = numbers),vjust = 1.6,size = 5.5,color = "white")
+  })
+  ##################################################
   
 }
 
@@ -248,6 +227,19 @@ server <- function(input,output){
 
 shinyApp(ui,server)
 
+
+##############################測試區
+windowsFonts(A=windowsFont("標楷體")) 
+p <- ggplot(category,aes(x = category,y = numbers,fill = category)) +
+  geom_bar(stat = "identity") + 
+  geom_text(aes(label = numbers),vjust = 1.6,size = 5.5,color = "white") +
+  ggtitle("空間資訊使用狀況") + 
+  theme(plot.title = element_text(hjust = 0.5,face = "bold",family = "A",size = 20))
+
+
+         
+p
+####################################
 
 #**from general to specific
 #**introduction background
