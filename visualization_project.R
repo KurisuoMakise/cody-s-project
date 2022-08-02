@@ -12,6 +12,8 @@ library(kableExtra)     #展示實地記錄所使用表格函數:kable() kable_s
 library(dygraphs)       #包含以下函數:dygraph() dyRangeSelector()等等
 library(tidyverse)      #包含以下函數:read_rds()
 
+library(zoo)            #包含以下函數:index()
+
 getwd()
 setwd("D:/NCTU_NOT_NYCU/Personal_Project/work")
 
@@ -68,7 +70,7 @@ sidebar <- dashboardSidebar(                                    #選擇欄
 )
 
 ###############################################網頁主內容(前端)
-body <- dashboardBody(                                         #網頁內容排版
+body <- dashboardBody(                                         #網頁主內容排版
   setBackgroundColor(color = "#2F4F4F"),
   ##第一個condition中input.???，???抓取你要連結的tag
   conditionalPanel(
@@ -100,8 +102,94 @@ body <- dashboardBody(                                         #網頁內容排�
   )
 )
 
+board <- dashboardPage(dashboardHeader(title = "電表數據展示儀表板"),sidebar,body)
+ui <- board
 
+###############################################網頁內容(後端)
+server <- function(input,output){
+  ##折線圖#########
+  graphing <- reactive({
+    filter(EBD,
+           between(EBD$Time,
+                   input$date[1],
+                   input$date[2])
+    )
+  })
+  output$graph <- renderPlot({
+    ggplot(graphing(),aes(x = Time,y = Usage),main = "電量分析") +
+      geom_line(colour='green') + 
+      theme(panel.background = element_rect(fill = 'black', colour = 'white')) +
+      scale_x_date(date_labels = "%y-%m-%d")
+  })
+  ################
+  
+  
+  ##峰值分布######
+  
+  peak_scatter <- reactive({
+    filter(EBD,
+           between(EBD$Time,
+                   input$date[1],
+                   input$date[2]),
+           Usage > 1250
+    )
+  })
+  output$peak <- renderPlot({
+    ggplot(peak_scatter(),aes(x = Time,y = Usage),main = "峰值分布") +
+      geom_point(color = "red") +
+      geom_hline(yintercept=1500, linetype="dashed", color = "red")
+  })
+  
+  
+  
+  ################
+  
+  ##KABLE#########
+  
+  output$recording <- function(){
+    staticEB2 %>%
+      kable("html") %>%
+      kable_styling("striped",full_width = F) %>%
+      column_spec(3:5,bold = T) %>%
+      row_spec(c(colcal(staticEB2)),background = "red")
+  }
+  
+  
+  ################
+  
+  
+  
+  ####電費圖片###########
+  output$expanse <- renderDygraph({
+    dygraph(xts_data_daily) %>%
+      dyRangeSelector(height = 40)
+  })
+  
+  
 
+  ##################################實地勘察數據處理
+  ##table(staticEB2$category)
+  #sum(table(table(staticEB2$category))) 找出有幾種不同資料
+  category <- as.data.frame(cbind(c("assistant_room","classroom","department_office","lab","library","lounge","meeting_room","office"),rbind(0,0,0,0,0,0,0,0)))
+  colnames(category) <- c("category","numbers")
+  list <- c("assistant_room","classroom","department_office","lab","library","lounge","meeting_room","office")
+  
+  for(i in 1:length(staticEB2$category)){
+    if(is.na(staticEB2$category[i]) == FALSE){
+      for(j in 1:length(list)){
+        if(staticEB2$category[i] == list[j]){
+          category$numbers[j] = as.numeric(category$numbers[j]) + 1
+        }
+      }
+    }
+  }
+  output$page1 <- renderPlot({
+    ggplot(category,aes(x = category,y = numbers,fill = category)) +
+      geom_bar(stat = "identity") + 
+      geom_text(aes(label = numbers),vjust = 1.6,size = 5.5,color = "white")
+  })
+  ##################################################
+  
+}
 
-
-
+shinyApp(ui,server)
