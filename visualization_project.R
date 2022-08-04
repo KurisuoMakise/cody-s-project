@@ -14,8 +14,11 @@ library(tidyverse)      #包含以下函數:read_rds()
 
 library(zoo)            #包含以下函數:index()
 
+
 getwd()
 setwd("D:/NCTU_NOT_NYCU/Personal_Project/work")
+
+windowsFonts(words = windowsFont("標楷體"))
 
 #########################匯入檔案區
 staticEB2 <- as.data.frame(read_excel("static_EB2.xlsx"))       #實地空間資訊調查記錄
@@ -60,7 +63,7 @@ sidebar <- dashboardSidebar(                                    #選擇欄
               #list第一個為下拉列表顯示，第二個為連結用tag
               choices = list(
                 "電表數據" = "graph1", 
-                "峰值分布" = "peak_scatter", 
+                #"峰值分布" = "peak_scatter", 
                 "用電實地調查推測紀錄" = "record",
                 "電費支出" = "BILL"), 
               selected = 1
@@ -71,33 +74,24 @@ sidebar <- dashboardSidebar(                                    #選擇欄
 
 ###############################################網頁主內容(前端)
 body <- dashboardBody(                                         #網頁主內容排版
-  setBackgroundColor(color = "#2F4F4F"),
   ##第一個condition中input.???，???抓取你要連結的tag
   conditionalPanel(
     condition = "input.select == 'graph1'",
-    #HTML的<p></p>意思
-    h1(id = "1","電表數據",align = "center"),
-    #status->外框顏色
-    plotOutput("graph")
-  ),
-  conditionalPanel(
-    condition = "input.select == 'peak_scatter'",
-    h1(id = "2","峰值分布",align = "center"),
-    plotOutput("peak"),
-    hr(),
     fluidRow(
-      column(6,plotOutput("page1")),
-      column(6,plotOutput("page2"))
+      column(12,plotOutput("graph")),
+      column(12,plotOutput("peak"))
     )
   ),
   conditionalPanel(
     condition = "input.select == 'record'",
-    h1(id = "3","用電實地調查記錄",align = "center"),
-    tableOutput("recording")
+    fluidRow(
+      column(6,tableOutput("recording")),
+      column(6,plotOutput("page1"))
+    )
   ),
   conditionalPanel(
     condition = "input.select == 'BILL'",
-    h1(id = "4","電費支出",align = "center"),
+    h1(id = "4","電費支出",align = "center",style = 'color:blue;;font-weight:bold;'),
     dygraphOutput("expanse")
   )
 )
@@ -119,7 +113,9 @@ server <- function(input,output){
     ggplot(graphing(),aes(x = Time,y = Usage),main = "電量分析") +
       geom_line(colour='green') + 
       theme(panel.background = element_rect(fill = 'black', colour = 'white')) +
-      scale_x_date(date_labels = "%y-%m-%d")
+      scale_x_date(date_labels = "%y-%m-%d") +
+      labs(title = "電表數據") + 
+      theme(plot.title = element_text(family = "words",color = "dark green",size = 24,face = "bold",hjust = 0.5))
   })
   ################
   
@@ -135,9 +131,13 @@ server <- function(input,output){
     )
   })
   output$peak <- renderPlot({
-    ggplot(peak_scatter(),aes(x = Time,y = Usage),main = "峰值分布") +
-      geom_point(color = "red") +
-      geom_hline(yintercept=1500, linetype="dashed", color = "red")
+    ggplot(peak_scatter(),aes(x = Time,y = Usage)) +
+      theme(panel.background = element_rect(fill = 'black', colour = 'white')) +
+      geom_point(color = "orange") +
+      geom_hline(yintercept=1500, linetype="dashed", color = "red") + 
+      labs(title = "用電峰值分布") + 
+      theme(plot.title = element_text(family = "words",color = "dark green",size = 24,face = "bold",hjust = 0.5))
+      
   })
   
   
@@ -151,7 +151,8 @@ server <- function(input,output){
       kable("html") %>%
       kable_styling("striped",full_width = F) %>%
       column_spec(3:5,bold = T) %>%
-      row_spec(c(colcal(staticEB2)),background = "red")
+      row_spec(c(colcal(staticEB2)),background = "red") %>%
+      scroll_box(height = "600px",width = "600px")
   }
   
   
@@ -186,7 +187,9 @@ server <- function(input,output){
   output$page1 <- renderPlot({
     ggplot(category,aes(x = category,y = numbers,fill = category)) +
       geom_bar(stat = "identity") + 
-      geom_text(aes(label = numbers),vjust = 1.6,size = 5.5,color = "white")
+      geom_text(aes(label = numbers),vjust = 1.6,size = 5.5,color = "white") +
+      labs(title = "空間分布資訊") + 
+      theme(plot.title = element_text(family = "words",color = "dark green",size = 24,face = "bold",hjust = 0.5))
   })
   ##################################################
   
