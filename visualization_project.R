@@ -16,7 +16,7 @@ library(zoo)            #包含以下函數:index()
 
 
 getwd()
-setwd("D:/NCTU_NOT_NYCU/Personal_Project/work")
+setwd("C:/Users/cody9/Desktop/git_data/cody-s-project")
 
 windowsFonts(words = windowsFont("標楷體"))
 
@@ -163,7 +163,11 @@ server <- function(input,output){
   ####電費圖片###########
   output$expanse <- renderDygraph({
     dygraph(xts_data_daily) %>%
-      dyRangeSelector(height = 40)
+      dyRangeSelector(height = 40) %>%
+      dyOptions(fillGraph = TRUE,fillAlpha = 0.2,gridLineColor = "green",pointSize = 0.6) %>%
+      dySeries(color = "orange") %>%
+      dyLegend(show = "follow") %>%
+      dyAxis("x", drawGrid = FALSE)
   })
   
   
