@@ -1,0 +1,9 @@
+# cody-s-project
+
+at least need these files:
+  money.rds
+  EB_day_20180101_20210228_aug.rds
+  static_EB2.xlsx
+  
+
+then open the visualization_project.r and run it
